@@ -82,7 +82,7 @@ function feedData(data) {
     .brcd{
       float: left;
       width: 26%;
-      background: url("images/q.jpg") no-repeat;
+      background: url("q.jpg") no-repeat;
       background-size: 50px;
       margin-top: 100px;
       padding-left: 15px;
@@ -90,7 +90,7 @@ function feedData(data) {
     }
     .brcd.print {
         display: list-item;
-        list-style-image: url("images/q.jpg");
+        list-style-image: url("q.jpg");
         list-style-position: inside;
     }
     .prnt{
@@ -337,7 +337,7 @@ p.download-date.issue {
         <div class="pdf">
             <div class="left">
                 <div class="one">
-                    <img src="images/image--001.jpg">
+                    <img src="image--001.jpg">
                     <p> नामांकन क्रम / Enrollment No: 4892/89659/4127 2390 </p>
                     <div class="rtt">
                         <p>Download&nbsp;Date:&nbsp;28/10/2025</p>
@@ -394,14 +394,14 @@ p.download-date.issue {
                     </div>
                     <div class="clr"></div>
                 </div> <div class="two">
-                    <img src="images/image--002.png" class="aapka-aadhar">
+                    <img src="image--002.png" class="aapka-aadhar">
                     <h3><span>${data.aadhar_number_formatted}</span></h3>
-                    <img src="images/image--003.png" class="meri-image">
+                    <img src="image--003.png" class="meri-image">
                 </div>  <div class="adhr">
-                    <img src="images/image--008.png" class="cut-008">
+                    <img src="image--008.png" class="cut-008">
                     <div class="three">
                         <p class="download-date">Download&nbsp;Date:&nbsp;28/10/2025</p>
-                        <img src="images/image--009.jpg" class="img2">
+                        <img src="image--009.jpg" class="img2">
                         <div class="a_lft">
                                  <img src="${data.photo_base64}" />
                                 </div>
@@ -430,23 +430,23 @@ p.download-date.issue {
                         </div>
 
                     </div>  <h3><span>${data.aadhar_number_formatted}</span></h3>
-                    <img src="images/image--010.jpg" class="img6 image--010">
+                    <img src="image--010.jpg" class="img6 image--010">
                 </div>
                 <div class="clr"></div>
             </div>
             <div class="cntr">
-                <img src="images/image--004.png" class="cut-verti">
+                <img src="image--004.png" class="cut-verti">
                 <div class="clr"></div>
             </div>
             <div class="right">
                 <div class="one">
-                    <img src="images/image--005.jpg" class="img4">
-                    <img src="images/image--006.jpg" class="img4">
+                    <img src="image--005.jpg" class="img4">
+                    <img src="image--006.jpg" class="img4">
                   </div> <div class="two"></div>
                 <div class="adhr adhr2">
-                    <img src="images/image--012.png" class="cut-008">
+                    <img src="image--012.png" class="cut-008">
                     <div class="three">
-                        <img src="images/image--013.jpg" class="img2 img--013">
+                        <img src="image--013.jpg" class="img2 img--013">
                         <div class="b_lft">
                             <ul>
                                 <li><span>पता:</span></li>
@@ -462,7 +462,7 @@ p.download-date.issue {
                         </div>
                         <div class="clr"></div>
                     </div>  <h3><span>${data.aadhar_number_formatted}</span></h3>
-                    <img src="images/image--015.png" class="img6">
+                    <img src="image--015.png" class="img6">
                 </div>
                 <div class="clr"></div>
             </div>
