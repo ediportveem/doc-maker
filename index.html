@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parichay — ID Document Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
+<!--
+  <script type="module">
+  import { Client, Account, Databases, Storage, ID, Query } from "https://cdn.jsdelivr.net/npm/appwrite@13.0.1/+esm";
+  window.__AW = { Client, Account, Databases, Storage, ID, Query };
+</script> -->
+<style>
+:root{
+  --navy:#16233F;
+  --navy-2:#1F345C;
+  --paper:#F6F3EC;
+  --paper-2:#EFEAE0;
+  --card:#FFFFFF;
+  --ink:#22262E;
+  --ink-soft:#5B6270;
+  --saffron:#E2963A;
+  --saffron-2:#C97C22;
+  --leaf:#2F7A4F;
+  --leaf-bg:#E7F3EA;
+  --red:#C0392B;
+  --red-bg:#FBEAE8;
+  --line:#E4DFD3;
+  --radius:14px;
+  --shadow: 0 8px 28px rgba(22,35,63,0.08);
+  --shadow-lg: 0 20px 60px rgba(22,35,63,0.22);
+  font-family:'Inter',sans-serif;
+}
+[data-theme="dark"]{
+  --navy:#0E1730;
+  --navy-2:#16233F;
+  --paper:#0F1524;
+  --paper-2:#161D30;
+  --card:#171F34;
+  --ink:#EDEFF5;
+  --ink-soft:#9AA1B4;
+  --line:#2A3352;
+  --shadow: 0 8px 28px rgba(0,0,0,0.35);
+  --shadow-lg: 0 20px 60px rgba(0,0,0,0.5);
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--paper);color:var(--ink);transition:background .25s ease,color .25s ease;}
+.hi{font-family:'Noto Sans Devanagari',sans-serif;}
+.display{font-family:'Manrope',sans-serif;}
+.mono{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums;}
+button{font-family:inherit;}
+::selection{background:var(--saffron);color:#fff;}
+a{color:inherit;}
+
+/* ---------- Loader ---------- */
+#bootLoader{position:fixed;inset:0;background:var(--navy);display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:14px;color:#fff;}
+.boot-seal{width:56px;height:56px;border-radius:50%;border:3px solid rgba(255,255,255,.25);border-top-color:var(--saffron);animation:spin 0.9s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ---------- Auth Screen ---------- */
+#authScreen{min-height:100vh;display:none;align-items:center;justify-content:center;padding:24px;position:relative;overflow:hidden;background:
+  radial-gradient(1200px 600px at 15% -10%, #24365F 0%, transparent 60%),
+  radial-gradient(900px 500px at 110% 10%, #2A2140 0%, transparent 55%),
+  var(--navy);}
+.auth-stripe{position:absolute;left:0;right:0;top:0;height:5px;background:linear-gradient(90deg,var(--saffron) 0 33%, #F4EFE2 33% 66%, var(--leaf) 66% 100%);}
+.auth-card{width:100%;max-width:420px;background:var(--card);border-radius:18px;box-shadow:var(--shadow-lg);padding:38px 34px;position:relative;z-index:2;}
+.auth-brand{display:flex;align-items:center;gap:12px;margin-bottom:6px;}
+.auth-brand .mark{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--saffron),var(--saffron-2));display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;}
+.auth-brand h1{font-size:1.28rem;margin:0;letter-spacing:-0.01em;}
+.auth-brand p{margin:0;color:var(--ink-soft);font-size:.82rem;}
+.auth-tabs{display:flex;background:var(--paper-2);border-radius:10px;padding:4px;margin:24px 0 20px;}
+.auth-tab{flex:1;text-align:center;padding:9px 0;border-radius:8px;font-weight:600;font-size:.88rem;cursor:pointer;color:var(--ink-soft);transition:.2s;}
+.auth-tab.active{background:var(--navy);color:#fff;}
+.field{margin-bottom:16px;}
+.field label{display:block;font-size:.82rem;font-weight:600;margin-bottom:6px;color:var(--ink-soft);}
+.field input{width:100%;padding:12px 13px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink);font-size:.95rem;transition:border-color .2s, box-shadow .2s;}
+.field input:focus{outline:none;border-color:var(--saffron);box-shadow:0 0 0 3px rgba(226,150,58,.18);}
+.btn-primary{width:100%;padding:13px;border:none;border-radius:10px;background:var(--navy);color:#fff;font-weight:700;font-size:.96rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:transform .12s, background .2s;}
+.btn-primary:hover{background:var(--navy-2);}
+.btn-primary:active{transform:scale(.98);}
+.btn-primary:disabled{opacity:.6;cursor:not-allowed;}
+.auth-err{background:var(--red-bg);color:var(--red);padding:10px 12px;border-radius:8px;font-size:.83rem;margin-bottom:14px;display:none;align-items:center;gap:8px;}
+.auth-foot{text-align:center;margin-top:16px;font-size:.8rem;color:var(--ink-soft);}
+
+/* ---------- App shell ---------- */
+#app{display:none;min-height:100vh;}
+.topbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;padding:12px 22px;background:var(--card);border-bottom:1px solid var(--line);}
+.topbar-left{display:flex;align-items:center;gap:12px;}
+.hamburger{display:none;background:none;border:none;cursor:pointer;color:var(--ink);padding:6px;}
+.brand-mini{display:flex;align-items:center;gap:10px;}
+.brand-mini .mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--saffron),var(--saffron-2));display:flex;align-items:center;justify-content:center;color:#fff;}
+.brand-mini span{font-family:'Manrope',sans-serif;font-weight:800;font-size:1.02rem;}
+.topbar-right{display:flex;align-items:center;gap:8px;position:relative;}
+.icon-btn{background:none;border:none;cursor:pointer;color:var(--ink-soft);padding:8px;border-radius:9px;display:flex;transition:.15s;}
+.icon-btn:hover{background:var(--paper-2);color:var(--ink);}
+.avatar-btn{display:flex;align-items:center;gap:8px;background:none;border:1px solid var(--line);border-radius:30px;padding:5px 12px 5px 5px;cursor:pointer;color:var(--ink);}
+.avatar-circle{width:28px;height:28px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700;}
+.user-menu{position:absolute;top:52px;right:0;background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow-lg);width:220px;padding:8px;display:none;z-index:60;}
+.user-menu .um-head{padding:10px 12px;border-bottom:1px solid var(--line);margin-bottom:6px;}
+.user-menu .um-head .nm{font-weight:700;font-size:.88rem;}
+.user-menu .um-head .em{font-size:.76rem;color:var(--ink-soft);}
+.um-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;cursor:pointer;font-size:.87rem;color:var(--ink);}
+.um-item:hover{background:var(--paper-2);}
+.um-item.danger{color:var(--red);}
+
+.layout{display:flex;}
+.sidebar{width:236px;flex-shrink:0;background:var(--card);border-right:1px solid var(--line);min-height:calc(100vh - 57px);padding:18px 12px;}
+.nav-item{display:flex;align-items:center;gap:11px;padding:11px 14px;border-radius:10px;cursor:pointer;color:var(--ink-soft);font-weight:600;font-size:.9rem;margin-bottom:4px;transition:.15s;}
+.nav-item svg{width:18px;height:18px;}
+.nav-item:hover{background:var(--paper-2);color:var(--ink);}
+.nav-item.active{background:var(--navy);color:#fff;}
+.nav-sep{height:1px;background:var(--line);margin:14px 6px;}
+.nav-stat{padding:10px 14px;font-size:.74rem;color:var(--ink-soft);}
+.nav-stat b{display:block;font-size:1.3rem;color:var(--ink);font-family:'Manrope',sans-serif;}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(10,14,25,.5);z-index:59;}
+
+.main{flex:1;padding:26px 30px 60px;max-width:1180px;}
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:22px;}
+.page-head h2{font-family:'Manrope',sans-serif;margin:0 0 4px;font-size:1.5rem;letter-spacing:-.01em;}
+.page-head p{margin:0;color:var(--ink-soft);font-size:.88rem;}
+.btn-accent{background:var(--saffron);color:#fff;border:none;padding:11px 18px;border-radius:10px;font-weight:700;font-size:.88rem;cursor:pointer;display:flex;align-items:center;gap:8px;transition:.15s;}
+.btn-accent:hover{background:var(--saffron-2);}
+
+/* ---------- Form Card ---------- */
+.form-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:30px;max-width:760px;}
+.form-section-title{display:flex;align-items:center;gap:9px;font-weight:700;font-size:.86rem;text-transform:uppercase;letter-spacing:.05em;color:var(--saffron-2);margin:22px 0 14px;}
+.form-section-title:first-child{margin-top:0;}
+.input-group{display:flex;gap:16px;}
+.input-group>div{flex:1;}
+#dataForm > div:not(.input-group){margin-bottom:18px;}
+.input-group{margin-bottom:18px;}
+label{display:block;margin-bottom:7px;font-weight:600;font-size:.85rem;color:var(--ink-soft);}
+input[type="text"], input[type="date"], select, textarea{
+  width:100%;padding:12px 13px;border:1.5px solid var(--line);border-radius:10px;
+  background:var(--paper);color:var(--ink);font-size:.94rem;transition:border-color .2s, box-shadow .2s;
+}
+textarea{min-height:76px;resize:vertical;font-family:inherit;}
+input:focus, select:focus, textarea:focus{outline:none;border-color:var(--saffron);box-shadow:0 0 0 3px rgba(226,150,58,.16);}
+.hint{font-size:.74rem;color:var(--ink-soft);margin-top:5px;}
+.file-drop{border:1.6px dashed var(--line);border-radius:12px;padding:18px;text-align:center;cursor:pointer;background:var(--paper);transition:.2s;position:relative;}
+.file-drop:hover{border-color:var(--saffron);}
+.file-drop input{position:absolute;inset:0;opacity:0;cursor:pointer;}
+.file-drop .fd-icon{color:var(--saffron-2);margin-bottom:6px;}
+.file-drop .fd-txt{font-size:.85rem;font-weight:600;}
+.file-drop .fd-sub{font-size:.74rem;color:var(--ink-soft);}
+#previewWrap{display:none;align-items:center;gap:14px;margin-top:12px;}
+#imagePreview{width:78px;height:78px;object-fit:cover;border-radius:10px;border:1px solid var(--line);}
+.err-msg{color:var(--red);font-size:.76rem;margin-top:5px;display:none;}
+.form-actions{display:flex;gap:10px;margin-top:8px;}
+.btn-ghost{background:none;border:1.5px solid var(--line);padding:12px 18px;border-radius:10px;font-weight:600;cursor:pointer;color:var(--ink);}
+
+/* ---------- Docs List ---------- */
+.toolbar{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px;}
+.search-box{flex:1;min-width:220px;position:relative;}
+.search-box svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--ink-soft);width:17px;height:17px;}
+.search-box input{width:100%;padding:11px 13px 11px 38px;border:1.5px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font-size:.9rem;}
+.search-box input:focus{outline:none;border-color:var(--saffron);}
+.filter-select{padding:11px 13px;border:1.5px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font-size:.87rem;}
+
+.doc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:16px;}
+.doc-card{background:var(--card);border-radius:14px;box-shadow:var(--shadow);overflow:hidden;cursor:pointer;transition:transform .15s, box-shadow .15s;border:1px solid var(--line);position:relative;}
+.doc-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg);}
+.doc-card-top{display:flex;gap:13px;padding:16px 16px 12px;background:
+  repeating-linear-gradient(135deg, transparent 0 10px, rgba(226,150,58,.05) 10px 11px);}
+.doc-photo{width:56px;height:56px;border-radius:10px;object-fit:cover;background:var(--paper-2);flex-shrink:0;border:1px solid var(--line);}
+.doc-info{min-width:0;}
+.doc-name{font-weight:700;font-size:.96rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.doc-name-hi{font-size:.82rem;color:var(--ink-soft);}
+.doc-card-dash{border-top:1.5px dashed var(--line);margin:0 16px;}
+.doc-card-bottom{padding:11px 16px 15px;display:flex;justify-content:space-between;align-items:center;}
+.doc-meta{font-size:.74rem;color:var(--ink-soft);display:flex;flex-direction:column;gap:3px;}
+.doc-meta .aad{font-family:'JetBrains Mono',monospace;letter-spacing:.02em;}
+.status-pill{background:var(--leaf-bg);color:var(--leaf);font-size:.68rem;font-weight:700;padding:4px 9px;border-radius:20px;display:flex;align-items:center;gap:4px;}
+.status-pill svg{width:11px;height:11px;}
+.card-menu-btn{position:absolute;top:12px;right:12px;background:rgba(255,255,255,.85);border:none;border-radius:8px;padding:5px;cursor:pointer;color:var(--ink-soft);backdrop-filter:blur(4px);}
+[data-theme="dark"] .card-menu-btn{background:rgba(23,31,52,.85);}
+
+.empty-state{text-align:center;padding:70px 20px;color:var(--ink-soft);}
+.empty-state svg{color:var(--line);margin-bottom:14px;}
+.empty-state h3{color:var(--ink);margin:0 0 6px;font-family:'Manrope',sans-serif;}
+.skeleton{background:var(--card);border-radius:14px;height:150px;border:1px solid var(--line);position:relative;overflow:hidden;}
+.skeleton::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(226,150,58,.08),transparent);animation:shimmer 1.3s infinite;}
+@keyframes shimmer{from{transform:translateX(-100%);}to{transform:translateX(100%);}}
+
+/* ---------- Modal ---------- */
+.modal-overlay{position:fixed;inset:0;background:rgba(15,20,35,.55);display:none;align-items:center;justify-content:center;z-index:200;padding:18px;backdrop-filter:blur(2px);}
+.modal{background:var(--card);border-radius:16px;max-width:520px;width:100%;box-shadow:var(--shadow-lg);max-height:88vh;overflow-y:auto;}
+.modal-head{display:flex;justify-content:space-between;align-items:center;padding:20px 22px 14px;border-bottom:1px solid var(--line);}
+.modal-head h3{margin:0;font-family:'Manrope',sans-serif;font-size:1.08rem;}
+.modal-body{padding:20px 22px;}
+.modal-foot{padding:16px 22px 22px;display:flex;gap:10px;}
+
+.id-preview{border:1.5px dashed var(--saffron);border-radius:14px;padding:18px;background:linear-gradient(135deg, var(--paper) 0%, var(--paper-2) 100%);}
+.id-preview-top{display:flex;gap:14px;align-items:center;margin-bottom:14px;}
+.id-preview-top img{width:66px;height:66px;border-radius:10px;object-fit:cover;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.15);}
+.id-preview-top .nm{font-weight:800;font-size:1.05rem;font-family:'Manrope',sans-serif;}
+.id-preview-top .nm-hi{font-size:.9rem;color:var(--ink-soft);}
+.id-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-size:.84rem;}
+.id-row:last-child{border-bottom:none;}
+.id-row .k{color:var(--ink-soft);}
+.id-row .v{font-weight:600;text-align:right;}
+.id-row .v.mono{font-family:'JetBrains Mono',monospace;}
+
+.confirm-icon{width:52px;height:52px;border-radius:50%;background:var(--red-bg);color:var(--red);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;}
+.btn-danger{background:var(--red);color:#fff;border:none;padding:12px 18px;border-radius:10px;font-weight:700;cursor:pointer;flex:1;}
+.btn-outline-flex{flex:1;background:none;border:1.5px solid var(--line);padding:12px 18px;border-radius:10px;font-weight:600;cursor:pointer;color:var(--ink);}
+
+/* ---------- Toasts ---------- */
+#toastWrap{position:fixed;top:18px;right:18px;z-index:999;display:flex;flex-direction:column;gap:10px;max-width:340px;}
+.toast{background:var(--card);border-left:4px solid var(--saffron);border-radius:10px;box-shadow:var(--shadow-lg);padding:13px 15px;display:flex;gap:10px;align-items:flex-start;animation:toastIn .25s ease;font-size:.86rem;}
+.toast.success{border-color:var(--leaf);}
+.toast.error{border-color:var(--red);}
+.toast svg{flex-shrink:0;margin-top:1px;}
+.toast.success svg{color:var(--leaf);}
+.toast.error svg{color:var(--red);}
+.toast.info svg{color:var(--saffron-2);}
+.toast .tclose{margin-left:auto;cursor:pointer;color:var(--ink-soft);background:none;border:none;padding:0;}
+@keyframes toastIn{from{opacity:0;transform:translateX(24px);}to{opacity:1;transform:translateX(0);}}
+.toast.leaving{animation:toastOut .2s ease forwards;}
+@keyframes toastOut{to{opacity:0;transform:translateX(24px);}}
+
+/* ---------- Print ---------- */
+@media print{
+  body *{visibility:hidden;}
+  #printArea, #printArea *{visibility:visible;}
+  #printArea{position:absolute;top:20px;left:50%;transform:translateX(-50%);}
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width:900px){
+  .sidebar{position:fixed;left:0;top:0;bottom:0;z-index:60;transform:translateX(-100%);transition:transform .25s ease;box-shadow:var(--shadow-lg);}
+  .sidebar.open{transform:translateX(0);}
+  .sidebar-overlay.open{display:block;}
+  .hamburger{display:flex;}
+  .main{padding:20px 16px 50px;}
+}
+@media (max-width:600px){
+  .input-group{flex-direction:column;gap:14px;}
+  .form-card{padding:20px;}
+  .auth-card{padding:28px 22px;}
+  .doc-grid{grid-template-columns:1fr;}
+  .page-head{align-items:flex-start;}
+  .avatar-btn span{display:none;}
+}
+</style>
+</head>
+<body>
+
+<div id="bootLoader"><div class="boot-seal"></div><div style="font-size:.85rem;opacity:.8;">Loading Parichay…</div></div>
+
+<!-- ============ AUTH SCREEN ============ -->
+<div id="authScreen">
+  <div class="auth-stripe"></div>
+  <div class="auth-card">
+    <div class="auth-brand">
+      <div class="mark"><i data-lucide="scroll-text" style="width:22px;height:22px;"></i></div>
+      <div>
+        <h1 class="display">Parichay</h1>
+        <p>Identity document portal</p>
+      </div>
+    </div>
+    <div class="auth-err" id="authErr"><i data-lucide="alert-circle" style="width:16px;height:16px;flex-shrink:0;"></i><span></span></div>
+    <form id="authForm">
+      <div class="field">
+        <label>Email</label>
+        <input type="text" id="authEmail" placeholder="you@example.com" autocomplete="email" required>
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="authPass" placeholder="••••••••" autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="btn-primary" id="authSubmitBtn">
+        <span id="authSubmitTxt">Log In</span>
+        <i data-lucide="arrow-right" style="width:16px;height:16px;"></i>
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- ============ APP SHELL ============ -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="hamburger" id="hamburgerBtn"><i data-lucide="menu"></i></button>
+      <div class="brand-mini">
+        <div class="mark"><i data-lucide="scroll-text" style="width:18px;height:18px;"></i></div>
+        <span>Parichay</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button class="icon-btn" id="themeToggle" title="Toggle theme"><i data-lucide="moon"></i></button>
+      <button class="avatar-btn" id="userMenuBtn">
+        <div class="avatar-circle" id="avatarInitial">U</div>
+        <span id="userNameTop" style="font-size:.85rem;font-weight:600;">User</span>
+        <i data-lucide="chevron-down" style="width:14px;height:14px;"></i>
+      </button>
+      <div class="user-menu" id="userMenu">
+        <div class="um-head"><div class="nm" id="umName">—</div><div class="em" id="umEmail">—</div></div>
+        <div class="um-item" id="umLogout"><i data-lucide="log-out" style="width:16px;height:16px;"></i> Log out</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="layout">
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <div class="sidebar" id="sidebar">
+      <div class="nav-item active" data-view="list"><i data-lucide="layout-list"></i> My Documents</div>
+      <div class="nav-item" data-view="create"><i data-lucide="file-plus-2"></i> New Document</div>
+      <div class="nav-sep"></div>
+      <div class="nav-stat">Total documents<b id="statTotal">0</b></div>
+      <div class="nav-stat">Added this month<b id="statMonth">0</b></div>
+    </div>
+
+    <div class="main">
+      <!-- LIST VIEW -->
+      <div id="viewList">
+        <div class="page-head">
+          <div><h2>My Documents</h2><p>All identity documents you've created</p></div>
+          <button class="btn-accent" id="goCreateBtn"><i data-lucide="plus" style="width:16px;height:16px;"></i> New Document</button>
+        </div>
+        <div class="toolbar">
+          <div class="search-box">
+            <i data-lucide="search"></i>
+            <input type="text" id="searchInput" placeholder="Search by name, Aadhar number...">
+          </div>
+          <select class="filter-select" id="sortSelect">
+            <option value="new">Newest first</option>
+            <option value="old">Oldest first</option>
+            <option value="az">Name A–Z</option>
+          </select>
+        </div>
+        <div id="docListArea"></div>
+      </div>
+
+      <!-- CREATE VIEW -->
+      <div id="viewCreate" style="display:none;">
+        <div class="page-head">
+          <div><h2 id="formTitle">New Document</h2><p>Fill in the details below to create an identity document</p></div>
+        </div>
+        <div class="form-card">
+          <form id="dataForm">
+            <div class="form-section-title"><i data-lucide="user" style="width:15px;height:15px;"></i> Personal Details</div>
+            <div class="input-group">
+              <div>
+                <label for="nameEnglish">Name (English)</label>
+                <input type="text" id="nameEnglish" required>
+              </div>
+              <div>
+                <label for="nameHindi" class="hi">नाम (Hindi)</label>
+                <input type="text" id="nameHindi" class="hi" required>
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="genderEnglish">Gender</label>
+                <select id="genderEnglish" required>
+                  <option value="">Select Gender</option>
+                  <option value="Male/पुरुष">Male / पुरुष</option>
+                  <option value="Female/महिला">Female / महिला</option>
+                  <option value="Other/अन्य">Other / अन्य</option>
+                </select>
+              </div>
+              <div>
+                <label for="dob">Date of Birth</label>
+                <input type="date" id="dob" required>
+              </div>
+            </div>
+
+            <div class="form-section-title"><i data-lucide="id-card" style="width:15px;height:15px;"></i> Identity</div>
+            <div>
+              <label for="aadharNumber">Aadhar Number</label>
+              <input type="text" id="aadharNumber" maxlength="14" placeholder="1234 5678 9012" required>
+              <div class="err-msg" id="aadharErr">Please enter a valid 12-digit Aadhar number.</div>
+            </div>
+
+            <div class="form-section-title"><i data-lucide="map-pin" style="width:15px;height:15px;"></i> Address</div>
+            <div class="input-group">
+              <div>
+                <label for="addressEnglish">Address (English)</label>
+                <textarea id="addressEnglish" required></textarea>
+              </div>
+              <div>
+                <label for="addressHindi" class="hi">पता (Hindi)</label>
+                <textarea id="addressHindi" class="hi" required></textarea>
+              </div>
+            </div>
+
+            <div class="form-section-title"><i data-lucide="image" style="width:15px;height:15px;"></i> Photo</div>
+            <div class="file-drop" id="fileDrop">
+              <input type="file" id="photo" accept="image/*">
+              <div class="fd-icon"><i data-lucide="upload-cloud" style="width:24px;height:24px;"></i></div>
+              <div class="fd-txt">Click or drag a photo to upload</div>
+              <div class="fd-sub">JPG or PNG, up to 5MB</div>
+            </div>
+            <div id="previewWrap">
+              <img id="imagePreview" src="#" alt="Preview">
+              <div>
+                <div style="font-weight:600;font-size:.85rem;" id="fileNameTxt"></div>
+                <div class="hint" style="cursor:pointer;color:var(--red);" id="removePhotoBtn">Remove photo</div>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" class="btn-ghost" id="cancelFormBtn">Cancel</button>
+              <button type="submit" class="btn-accent" id="submitBtn" style="flex:1;justify-content:center;">
+                <i data-lucide="save" style="width:16px;height:16px;"></i> <span id="submitBtnTxt">Create Document</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ VIEW / EDIT MODAL ============ -->
+<div class="modal-overlay" id="viewModalOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Document Details</h3>
+      <button class="icon-btn" id="closeViewModal"><i data-lucide="x"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="id-preview" id="printArea">
+        <div class="id-preview-top">
+          <img id="mdPhoto" src="" alt="">
+          <div>
+            <div class="nm" id="mdName">—</div>
+            <div class="nm-hi hi" id="mdNameHi">—</div>
+          </div>
+        </div>
+        <div class="id-row"><span class="k">Gender</span><span class="v" id="mdGender">—</span></div>
+        <div class="id-row"><span class="k">Date of Birth</span><span class="v" id="mdDob">—</span></div>
+        <div class="id-row"><span class="k">Aadhar Number</span><span class="v mono" id="mdAadhar">—</span></div>
+        <div class="id-row"><span class="k">Address (EN)</span><span class="v" id="mdAddrEn" style="max-width:60%;">—</span></div>
+        <div class="id-row"><span class="k hi">पता (HI)</span><span class="v hi" id="mdAddrHi" style="max-width:60%;">—</span></div>
+        <div class="id-row"><span class="k">Created</span><span class="v" id="mdCreated">—</span></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button style="display: none;" disabled class="btn-outline-flex" id="mdEditBtn"><i data-lucide="pencil" style="width:14px;height:14px;display:inline;vertical-align:-2px;"></i> Edit</button>
+      <button class="btn-outline-flex" id="mdPrintBtn"><i data-lucide="printer" style="width:14px;height:14px;display:inline;vertical-align:-2px;"></i> Print</button>
+     <button style="display: none;" disabled class="btn-danger" id="mdDeleteBtn"><i data-lucide="trash-2" style="width:14px;height:14px;display:inline;vertical-align:-2px;"></i> Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ DELETE CONFIRM MODAL ============ -->
+<div class="modal-overlay" id="confirmModalOverlay">
+  <div class="modal" style="max-width:360px;">
+    <div class="modal-body" style="text-align:center;padding:30px 24px 10px;">
+      <div class="confirm-icon"><i data-lucide="trash-2"></i></div>
+      <h3 style="margin:0 0 8px;font-family:'Manrope',sans-serif;">Delete this document?</h3>
+      <p style="color:var(--ink-soft);font-size:.87rem;margin:0;">This action can't be undone. The record and photo will be permanently removed.</p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-outline-flex" id="cancelDeleteBtn">Cancel</button>
+      <button class="btn-danger" id="confirmDeleteBtn">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div id="toastWrap"></div>
+
+<script>
+/* ============================================================
+   CONFIG
+=============================================================*/
+const APPWRITE_CONFIG = {
+  ENDPOINT: "https://fra.cloud.appwrite.io/v1",
+  PROJECT_ID: "6a4b8d930018695e420b",
+  DATABASE_ID: "6a4b8ea900029993b7d1",
+  IDS_COLLECTION_ID: "identity",
+  BUCKET_ID: "6a4b8e2c00087f9a88c9",
+};
+
+const DEFAULT_DOC_TYPE = "Aadhar Card";
+
+let client, account, databases, storage, ID, Query;
+let currentUser = null;
+let allDocs = [];
+let editingDocId = null;
+let pendingDeleteId = null;
+let uploadedPhotoFile = null;
+
+window.__AW = Appwrite;
+
+function initAppwrite(){
+  const AW = window.__AW;
+  ID = AW.ID; Query = AW.Query;
+  client = new AW.Client().setEndpoint(APPWRITE_CONFIG.ENDPOINT).setProject(APPWRITE_CONFIG.PROJECT_ID);
+  account = new AW.Account(client);
+  databases = new AW.Databases(client);
+  storage = new AW.Storage(client);
+}
+
+function icons(){ if(window.lucide) lucide.createIcons(); }
+
+/* ============================================================
+   TOASTS
+=============================================================*/
+function toast(msg, type="info", timeout=3800){
+  const wrap = document.getElementById('toastWrap');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  const iconName = type==='success' ? 'check-circle-2' : type==='error' ? 'alert-circle' : 'info';
+  el.innerHTML = `<i data-lucide="${iconName}" style="width:18px;height:18px;"></i><span>${msg}</span><button class="tclose"><i data-lucide="x" style="width:14px;height:14px;"></i></button>`;
+  wrap.appendChild(el);
+  icons();
+  const remove = ()=>{ el.classList.add('leaving'); setTimeout(()=>el.remove(),200); };
+  el.querySelector('.tclose').onclick = remove;
+  setTimeout(remove, timeout);
+}
+
+/* ============================================================
+   THEME
+=============================================================*/
+function applyTheme(t){
+  document.documentElement.setAttribute('data-theme', t);
+  localStorage.setItem('parichay-theme', t);
+  const btn = document.getElementById('themeToggle');
+  btn.innerHTML = t==='dark' ? '<i data-lucide="sun"></i>' : '<i data-lucide="moon"></i>';
+  icons();
+}
+document.getElementById('themeToggle').onclick = ()=>{
+  const cur = document.documentElement.getAttribute('data-theme');
+  applyTheme(cur==='dark' ? 'light' : 'dark');
+};
+applyTheme(localStorage.getItem('parichay-theme') || 'light');
+
+/* ============================================================
+   AUTH SCREEN LOGIC
+=============================================================*/
+// Compatibility wrapper: different Appwrite SDK versions expose the
+// email/password session creator under different method names.
+async function loginWithEmailPassword(email, pass){
+  if(typeof account.createEmailPasswordSession === 'function'){
+    return account.createEmailPasswordSession(email, pass);
+  }
+  if(typeof account.createSession === 'function'){
+    return account.createSession(email, pass);
+  }
+  throw new Error('This Appwrite SDK build has no email/password session method.');
+}
+
+function showAuthErr(msg){
+  const box = document.getElementById('authErr');
+  box.querySelector('span').textContent = msg;
+  box.style.display = 'flex';
+}
+function hideAuthErr(){ document.getElementById('authErr').style.display = 'none'; }
+
+document.getElementById('authForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  hideAuthErr();
+  const email = document.getElementById('authEmail').value.trim();
+  const pass = document.getElementById('authPass').value;
+  const btn = document.getElementById('authSubmitBtn');
+  btn.disabled = true;
+  try{
+    await loginWithEmailPassword(email, pass);
+    await bootApp();
+  }catch(err){
+    showAuthErr(err.message || 'Something went wrong. Please try again.');
+  }finally{
+    btn.disabled = false;
+  }
+});
+
+/* ============================================================
+   BOOT / SESSION
+=============================================================*/
+async function checkSession(){
+  try{
+    currentUser = await account.get();
+    return true;
+  }catch(e){
+    currentUser = null;
+    return false;
+  }
+}
+
+async function bootApp(){
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  const initials = (currentUser.name || currentUser.email || 'U').trim().charAt(0).toUpperCase();
+  document.getElementById('avatarInitial').textContent = initials;
+  document.getElementById('userNameTop').textContent = (currentUser.name || currentUser.email.split('@')[0]);
+  document.getElementById('umName').textContent = currentUser.name || '—';
+  document.getElementById('umEmail').textContent = currentUser.email || '—';
+  await loadDocs();
+  showView('list');
+}
+
+/* ============================================================
+   USER MENU
+=============================================================*/
+document.getElementById('userMenuBtn').onclick = (e)=>{
+  e.stopPropagation();
+  document.getElementById('userMenu').style.display = document.getElementById('userMenu').style.display==='block' ? 'none' : 'block';
+};
+document.addEventListener('click', ()=>{ document.getElementById('userMenu').style.display='none'; });
+document.getElementById('umLogout').onclick = async ()=>{
+  try{ await account.deleteSession('current'); }catch(e){}
+  currentUser = null;
+  allDocs = [];
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('authScreen').style.display = 'flex';
+  document.getElementById('authForm').reset();
+  toast('Logged out successfully', 'success');
+};
+
+/* ============================================================
+   SIDEBAR NAV
+=============================================================*/
+document.querySelectorAll('.nav-item').forEach(item=>{
+  item.onclick = ()=>showView(item.dataset.view);
+});
+document.getElementById('goCreateBtn').onclick = ()=>showView('create');
+document.getElementById('cancelFormBtn').onclick = ()=>showView('list');
+document.getElementById('hamburgerBtn').onclick = ()=>{
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('sidebarOverlay').classList.add('open');
+};
+document.getElementById('sidebarOverlay').onclick = closeSidebar;
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('open');
+}
+
+function showView(view){
+  document.querySelectorAll('.nav-item').forEach(i=>i.classList.toggle('active', i.dataset.view===view));
+  document.getElementById('viewList').style.display = view==='list' ? 'block' : 'none';
+  document.getElementById('viewCreate').style.display = view==='create' ? 'block' : 'none';
+  if(view==='create' && !editingDocId) resetForm();
+  closeSidebar();
+}
+
+/* ============================================================
+   PHOTO UPLOAD HANDLING
+=============================================================*/
+const photoInput = document.getElementById('photo');
+photoInput.addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  if(file.size > 5*1024*1024){ toast('Photo must be under 5MB', 'error'); photoInput.value=''; return; }
+  uploadedPhotoFile = file;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    document.getElementById('imagePreview').src = reader.result;
+    document.getElementById('previewWrap').style.display = 'flex';
+    document.getElementById('fileNameTxt').textContent = file.name;
+  };
+  reader.readAsDataURL(file);
+});
+document.getElementById('removePhotoBtn').onclick = ()=>{
+  uploadedPhotoFile = null;
+  photoInput.value = '';
+  document.getElementById('previewWrap').style.display = 'none';
+};
+
+/* Aadhar formatting: auto space every 4 digits */
+document.getElementById('aadharNumber').addEventListener('input', (e)=>{
+  let v = e.target.value.replace(/\D/g,'').slice(0,12);
+  e.target.value = v.replace(/(\d{4})(?=\d)/g,'$1 ');
+});
+
+/* ============================================================
+   FORM SUBMIT (create / update)
+=============================================================*/
+function resetForm(){
+  document.getElementById('dataForm').reset();
+  document.getElementById('previewWrap').style.display = 'none';
+  uploadedPhotoFile = null;
+  editingDocId = null;
+  document.getElementById('formTitle').textContent = 'New Document';
+  document.getElementById('submitBtnTxt').textContent = 'Create Document';
+  document.getElementById('aadharErr').style.display = 'none';
+}
+
+document.getElementById('dataForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const aadhar = document.getElementById('aadharNumber').value.replace(/\s/g,'');
+  if(!/^\d{12}$/.test(aadhar)){
+    document.getElementById('aadharErr').style.display = 'block';
+    toast('Please enter a valid 12-digit Aadhar number', 'error');
+    return;
+  }
+  document.getElementById('aadharErr').style.display = 'none';
+
+  if(!editingDocId && !uploadedPhotoFile){
+    toast('Please upload a photo', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('submitBtn');
+  const btnTxt = document.getElementById('submitBtnTxt');
+  btn.disabled = true;
+  const originalTxt = btnTxt.textContent;
+  btnTxt.textContent = editingDocId ? 'Saving…' : 'Creating…';
+
+  try{
+    let photoFileId = editingDocId ? (allDocs.find(d=>d.$id===editingDocId)?.photo || null) : null;
+
+    if(uploadedPhotoFile){
+      if(editingDocId && photoFileId){
+        try{ await storage.deleteFile(APPWRITE_CONFIG.BUCKET_ID, photoFileId); }catch(err){}
+      }
+      const uploaded = await storage.createFile(APPWRITE_CONFIG.BUCKET_ID, ID.unique(), uploadedPhotoFile);
+      photoFileId = uploaded.$id;
+    }
+
+    const payload = {
+      name_en: document.getElementById('nameEnglish').value.trim(),
+      name_hi: document.getElementById('nameHindi').value.trim(),
+      gender: document.getElementById('genderEnglish').value,
+      dob: document.getElementById('dob').value,
+      id_num: aadhar,
+      address_en: document.getElementById('addressEnglish').value.trim(),
+      address_hi: document.getElementById('addressHindi').value.trim(),
+      photo: photoFileId,
+      type: DEFAULT_DOC_TYPE,
+    };
+
+    if(editingDocId){
+      await databases.updateDocument(APPWRITE_CONFIG.DATABASE_ID, APPWRITE_CONFIG.IDS_COLLECTION_ID, editingDocId, payload);
+      toast('Document updated successfully', 'success');
+    } else {
+      await databases.createDocument(APPWRITE_CONFIG.DATABASE_ID, APPWRITE_CONFIG.IDS_COLLECTION_ID, ID.unique(), payload);
+      toast('Document created successfully', 'success');
+    }
+
+    resetForm();
+    await loadDocs();
+    showView('list');
+  }catch(err){
+    toast(err.message || 'Failed to save document', 'error');
+  }finally{
+    btn.disabled = false;
+    btnTxt.textContent = originalTxt;
+  }
+});
+
+/* ============================================================
+   LOAD & RENDER DOCS
+=============================================================*/
+async function loadDocs(){
+  renderSkeleton();
+  try{
+    const res = await databases.listDocuments(
+      APPWRITE_CONFIG.DATABASE_ID,
+      APPWRITE_CONFIG.IDS_COLLECTION_ID,
+      [Query.orderDesc('$createdAt'), Query.limit(200)]
+    );
+    allDocs = res.documents;
+    // resolve photo preview URLs
+    for(const d of allDocs){
+      d._photoUrl = d.photo ? storage.getFileView(APPWRITE_CONFIG.BUCKET_ID, d.photo) : null;
+    }
+    updateStats();
+    renderDocList();
+  }catch(err){
+    document.getElementById('docListArea').innerHTML = `<div class="empty-state"><i data-lucide="alert-triangle" style="width:44px;height:44px;"></i><h3>Couldn't load documents</h3><p>${err.message || 'Please try again.'}</p></div>`;
+    icons();
+  }
+}
+
+function renderSkeleton(){
+  const area = document.getElementById('docListArea');
+  area.innerHTML = `<div class="doc-grid">${Array(3).fill('<div class="skeleton"></div>').join('')}</div>`;
+}
+
+function updateStats(){
+  document.getElementById('statTotal').textContent = allDocs.length;
+  const now = new Date();
+  const thisMonth = allDocs.filter(d=>{
+    const c = new Date(d.$createdAt);
+    return c.getMonth()===now.getMonth() && c.getFullYear()===now.getFullYear();
+  }).length;
+  document.getElementById('statMonth').textContent = thisMonth;
+}
+
+function fmtDate(iso){
+  return new Date(iso).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+}
+function maskAadhar(a){
+  if(!a) return '—';
+  return 'XXXX XXXX ' + a.slice(-4);
+}
+
+function renderDocList(){
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  const sort = document.getElementById('sortSelect').value;
+  let docs = allDocs.filter(d=>{
+    if(!q) return true;
+    return (d.name_en||'').toLowerCase().includes(q) ||
+           (d.name_hi||'').includes(q) ||
+           (d.id_num||'').includes(q.replace(/\s/g,''));
+  });
+  docs = [...docs].sort((a,b)=>{
+    if(sort==='new') return new Date(b.$createdAt)-new Date(a.$createdAt);
+    if(sort==='old') return new Date(a.$createdAt)-new Date(b.$createdAt);
+    if(sort==='az') return (a.name_en||'').localeCompare(b.name_en||'');
+    return 0;
+  });
+
+  const area = document.getElementById('docListArea');
+  if(docs.length===0){
+    area.innerHTML = `<div class="empty-state">
+      <i data-lucide="folder-search" style="width:48px;height:48px;"></i>
+      <h3>${allDocs.length===0 ? 'No documents yet' : 'No matching documents'}</h3>
+      <p>${allDocs.length===0 ? 'Create your first identity document to see it here.' : 'Try a different search term.'}</p>
+    </div>`;
+    icons();
+    return;
+  }
+
+  area.innerHTML = `<div class="doc-grid">${docs.map(d=>`
+    <div class="doc-card" data-id="${d.$id}">
+      <button class="card-menu-btn" data-menu-id="${d.$id}"><i data-lucide="more-vertical" style="width:16px;height:16px;"></i></button>
+      <div class="doc-card-top">
+        <img class="doc-photo" src="${d._photoUrl || ''}" onerror="this.style.opacity=0" alt="">
+        <div class="doc-info">
+          <div class="doc-name">${escapeHtml(d.name_en||'—')}</div>
+          <div class="doc-name-hi hi">${escapeHtml(d.name_hi||'')}</div>
+        </div>
+      </div>
+      <div class="doc-card-dash"></div>
+      <div class="doc-card-bottom">
+        <div class="doc-meta">
+          <span class="aad">${maskAadhar(d.id_num)}</span>
+          <span>Created ${fmtDate(d.$createdAt)}</span>
+        </div>
+        <div class="status-pill"><i data-lucide="check"></i> Active</div>
+      </div>
+    </div>
+  `).join('')}</div>`;
+  icons();
+
+  document.querySelectorAll('.doc-card').forEach(card=>{
+    card.addEventListener('click', (e)=>{
+      if(e.target.closest('.card-menu-btn')) return;
+      openViewModal(card.dataset.id);
+    });
+  });
+  document.querySelectorAll('.card-menu-btn').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{ e.stopPropagation(); openViewModal(btn.dataset.menuId); });
+  });
+}
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+document.getElementById('searchInput').addEventListener('input', renderDocList);
+document.getElementById('sortSelect').addEventListener('change', renderDocList);
+
+/* ============================================================
+   VIEW MODAL
+=============================================================*/
+let activeDoc = null;
+function openViewModal(id){
+  activeDoc = allDocs.find(d=>d.$id===id);
+  if(!activeDoc) return;
+  document.getElementById('mdPhoto').src = activeDoc._photoUrl || '';
+  document.getElementById('mdName').textContent = activeDoc.name_en || '—';
+  document.getElementById('mdNameHi').textContent = activeDoc.name_hi || '—';
+  document.getElementById('mdGender').textContent = activeDoc.gender || '—';
+  document.getElementById('mdDob').textContent = activeDoc.dob ? fmtDate(activeDoc.dob) : '—';
+  document.getElementById('mdAadhar').textContent = maskAadhar(activeDoc.id_num);
+  document.getElementById('mdAddrEn').textContent = activeDoc.address_en || '—';
+  document.getElementById('mdAddrHi').textContent = activeDoc.address_hi || '—';
+  document.getElementById('mdCreated').textContent = fmtDate(activeDoc.$createdAt);
+  document.getElementById('viewModalOverlay').style.display = 'flex';
+}
+document.getElementById('closeViewModal').onclick = ()=> document.getElementById('viewModalOverlay').style.display='none';
+document.getElementById('viewModalOverlay').addEventListener('click', (e)=>{
+  if(e.target.id==='viewModalOverlay') e.currentTarget.style.display='none';
+});
+
+
+document.getElementById('mdPrintBtn').onclick = ()=> logData(activeDoc);
+
+  
+document.getElementById('mdEditBtn').onclick = ()=>{
+  if(!activeDoc) return;
+  editingDocId = activeDoc.$id;
+  document.getElementById('nameEnglish').value = activeDoc.name_en || '';
+  document.getElementById('nameHindi').value = activeDoc.name_hi || '';
+  document.getElementById('genderEnglish').value = activeDoc.gender || '';
+  document.getElementById('dob').value = activeDoc.dob || '';
+  document.getElementById('aadharNumber').value = (activeDoc.id_num||'').replace(/(\d{4})(?=\d)/g,'$1 ');
+  document.getElementById('addressEnglish').value = activeDoc.address_en || '';
+  document.getElementById('addressHindi').value = activeDoc.address_hi || '';
+  uploadedPhotoFile = null;
+  if(activeDoc._photoUrl){
+    document.getElementById('imagePreview').src = activeDoc._photoUrl;
+    document.getElementById('previewWrap').style.display = 'flex';
+    document.getElementById('fileNameTxt').textContent = 'Current photo (upload to replace)';
+  }
+  document.getElementById('formTitle').textContent = 'Edit Document';
+  document.getElementById('submitBtnTxt').textContent = 'Save Changes';
+  document.getElementById('viewModalOverlay').style.display = 'none';
+  showView('create');
+};
+document.getElementById('mdDeleteBtn').onclick = ()=>{
+  pendingDeleteId = activeDoc.$id;
+  document.getElementById('viewModalOverlay').style.display = 'none';
+  document.getElementById('confirmModalOverlay').style.display = 'flex';
+};
+
+/* ============================================================
+   DELETE CONFIRM
+=============================================================*/
+document.getElementById('cancelDeleteBtn').onclick = ()=>{
+  document.getElementById('confirmModalOverlay').style.display = 'none';
+  pendingDeleteId = null;
+};
+document.getElementById('confirmModalOverlay').addEventListener('click', (e)=>{
+  if(e.target.id==='confirmModalOverlay') e.currentTarget.style.display='none';
+});
+document.getElementById('confirmDeleteBtn').onclick = async ()=>{
+  if(!pendingDeleteId) return;
+  const doc = allDocs.find(d=>d.$id===pendingDeleteId);
+  const btn = document.getElementById('confirmDeleteBtn');
+  btn.disabled = true; btn.textContent = 'Deleting…';
+  try{
+    if(doc?.photo){
+      try{ await storage.deleteFile(APPWRITE_CONFIG.BUCKET_ID, doc.photo); }catch(e){}
+    }
+    await databases.deleteDocument(APPWRITE_CONFIG.DATABASE_ID, APPWRITE_CONFIG.IDS_COLLECTION_ID, pendingDeleteId);
+    toast('Document deleted', 'success');
+    document.getElementById('confirmModalOverlay').style.display = 'none';
+    pendingDeleteId = null;
+    await loadDocs();
+  }catch(err){
+    toast(err.message || 'Failed to delete', 'error');
+  }finally{
+    btn.disabled = false; btn.textContent = 'Delete';
+  }
+};
+
+/* ============================================================
+   INIT
+=============================================================*/
+window.addEventListener('DOMContentLoaded', async ()=>{
+  icons();
+  initAppwrite();
+  const hasSession = await checkSession();
+  document.getElementById('bootLoader').style.display = 'none';
+  if(hasSession){
+    await bootApp();
+  } else {
+    document.getElementById('authScreen').style.display = 'flex';
+    icons();
+  }
+});
+</script>
+  <script src="main.js"></script>
+</body>
+</html>
